@@ -1,0 +1,19 @@
+{
+  "name": "apollo-clone-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Apollo Light Backend & Lead Scraping Engine",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "puppeteer-core": "^25.13.0"
+  }
+}
