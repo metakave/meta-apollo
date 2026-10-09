@@ -29,12 +29,14 @@ app.get('/api/stats', (req, res) => {
 // Leads list with filters
 app.get('/api/leads', (req, res) => {
   try {
-    const { search, industry, location, email_status, job_id, page, limit } = req.query;
+    const { search, industry, location, email_status, has_whatsapp, has_linkedin, job_id, page, limit } = req.query;
     const result = database.getLeads({
       search,
       industry,
       location,
       email_status,
+      has_whatsapp,
+      has_linkedin,
       job_id,
       page: page ? parseInt(page) : 1,
       limit: limit ? parseInt(limit) : 50
@@ -48,7 +50,7 @@ app.get('/api/leads', (req, res) => {
 // Add manual lead
 app.post('/api/leads', async (req, res) => {
   try {
-    const { full_name, job_title, company_name, company_domain, email, phone, location, industry } = req.body;
+    const { full_name, job_title, company_name, company_domain, email, phone, whatsapp, linkedin_url, location, industry } = req.body;
     if (!full_name || !company_name) {
       return res.status(400).json({ error: 'Full name and company name are required' });
     }
@@ -79,6 +81,9 @@ app.post('/api/leads', async (req, res) => {
       email_status: emailStatus,
       email_mx_record: mxRecord,
       phone: phone || '',
+      whatsapp: whatsapp || '',
+      linkedin_url: linkedin_url || '',
+      company_linkedin: '',
       source: 'Manual Entry'
     });
 
@@ -226,7 +231,8 @@ app.get('/api/export', (req, res) => {
     const headers = [
       'First Name', 'Last Name', 'Full Name', 'Job Title', 'Company Name', 
       'Company Domain', 'Website', 'Email', 'Email Status', 'MX Provider', 
-      'Phone', 'Location', 'Industry', 'LinkedIn', 'Source'
+      'Phone', 'WhatsApp Number', 'WhatsApp Chat Link', 'Location', 'Industry', 
+      'LinkedIn Profile', 'Company LinkedIn', 'Source'
     ];
 
     const escapeCsv = (val) => {
@@ -235,23 +241,32 @@ app.get('/api/export', (req, res) => {
       return `"${str}"`;
     };
 
-    const rows = leads.map(l => [
-      escapeCsv(l.first_name),
-      escapeCsv(l.last_name),
-      escapeCsv(l.full_name),
-      escapeCsv(l.job_title),
-      escapeCsv(l.company_name),
-      escapeCsv(l.company_domain),
-      escapeCsv(l.company_website),
-      escapeCsv(l.email),
-      escapeCsv(l.email_status),
-      escapeCsv(l.email_mx_record),
-      escapeCsv(l.phone),
-      escapeCsv(l.location),
-      escapeCsv(l.industry),
-      escapeCsv(l.linkedin_url),
-      escapeCsv(l.source)
-    ].join(','));
+    const rows = leads.map(l => {
+      const waNumber = l.whatsapp || (l.phone && l.phone.startsWith('+') ? l.phone : '');
+      const waDigits = waNumber ? waNumber.replace(/\D/g, '') : '';
+      const waLink = waDigits ? `https://wa.me/${waDigits}` : '';
+
+      return [
+        escapeCsv(l.first_name),
+        escapeCsv(l.last_name),
+        escapeCsv(l.full_name),
+        escapeCsv(l.job_title),
+        escapeCsv(l.company_name),
+        escapeCsv(l.company_domain),
+        escapeCsv(l.company_website),
+        escapeCsv(l.email),
+        escapeCsv(l.email_status),
+        escapeCsv(l.email_mx_record),
+        escapeCsv(l.phone),
+        escapeCsv(waNumber),
+        escapeCsv(waLink),
+        escapeCsv(l.location),
+        escapeCsv(l.industry),
+        escapeCsv(l.linkedin_url),
+        escapeCsv(l.company_linkedin),
+        escapeCsv(l.source)
+      ].join(',');
+    });
 
     const csvContent = [headers.join(','), ...rows].join('\n');
 

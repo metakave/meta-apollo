@@ -8,14 +8,17 @@ Apollo Light is a lightweight, self-hosted clone of Apollo.io. It discovers targ
 ## Features
 
 - **Multi-Source Company Discovery**: Free ecosystem discovery across B2B registers, domains, and directories.
-- **Deep Website Scraping**: Automatically extracts company description, detected tech stack (React, Next.js, Stripe, HubSpot, Shopify, etc.), phone numbers, and social links (LinkedIn, Twitter/X).
-- **Decision-Maker Discovery**: Scans team, about, and leadership pages for key roles (`CEO`, `Founder`, `CTO`, `VP`, `Head of Growth`).
+- **Deep Website Scraping**: Automatically extracts company description, detected tech stack (React, Next.js, Stripe, HubSpot, Shopify, etc.), phone numbers, WhatsApp contact widgets, and social links.
+- **WhatsApp Contact Intelligence**: Automatically detects and validates WhatsApp numbers from `wa.me` links, WhatsApp Web/API widgets, text patterns, and contact pages. Provides 1-click **"Chat on WhatsApp"** directly in browser and WhatsApp desktop.
+- **Decision-Maker & LinkedIn Profile Discovery**:
+  - Scans team, about, contact, and leadership pages for key roles (`CEO`, `Founder`, `CTO`, `VP`, `Head of Growth`).
+  - Discovers verified personal LinkedIn profiles (`/in/`) with direct 1-click access and automated targeted LinkedIn People Search links.
 - **Corporate Email Permutation & Verification**:
   - Generates standard B2B patterns (`first.last@domain`, `first@domain`, `flast@domain`).
   - Real-time DNS MX validation (identifying Google Workspace, Microsoft 365, Zoho Mail, etc.) without requiring paid third-party APIs.
 - **Real-Time Job Streaming**: Live Server-Sent Events (SSE) terminal and progress bar showing each crawling step.
-- **Cold Outreach CSV Export**: 1-click export formatted for instant import into Instantly, Lemlist, Smartlead, or HubSpot.
-- **Modern Apollo UI**: Dark-mode glassmorphic dashboard with quick industry shortcuts (⚡ Fintech London, 🚀 AI SF, 💼 SaaS NYC, etc.).
+- **Cold Outreach CSV Export**: 1-click export formatted for instant import into Instantly, Lemlist, Smartlead, or HubSpot with verified emails, WhatsApp numbers, direct WhatsApp chat links, and LinkedIn URLs.
+- **Modern Apollo UI**: Dark-mode glassmorphic dashboard with quick industry shortcuts, direct WhatsApp and LinkedIn filters, and slide-over lead intelligence profiles.
 
 ---
 

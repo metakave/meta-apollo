@@ -54,7 +54,9 @@ db.exec(`
     email_status TEXT DEFAULT 'unverified',
     email_mx_record TEXT,
     phone TEXT,
+    whatsapp TEXT,
     linkedin_url TEXT,
+    company_linkedin TEXT,
     twitter_url TEXT,
     source TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -67,6 +69,18 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(email_status);
   CREATE INDEX IF NOT EXISTS idx_leads_job_id ON leads(job_id);
 `);
+
+// Safe column migrations for existing databases
+try {
+  db.exec(`ALTER TABLE leads ADD COLUMN whatsapp TEXT;`);
+} catch (e) {
+  // column already exists
+}
+try {
+  db.exec(`ALTER TABLE leads ADD COLUMN company_linkedin TEXT;`);
+} catch (e) {
+  // column already exists
+}
 
 export const database = {
   // Jobs methods
@@ -162,8 +176,8 @@ export const database = {
         id, job_id, full_name, first_name, last_name, job_title, 
         company_name, company_domain, company_website, company_size, 
         industry, location, email, email_status, email_mx_record, 
-        phone, linkedin_url, twitter_url, source, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        phone, whatsapp, linkedin_url, company_linkedin, twitter_url, source, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `);
 
     stmt.run(
@@ -183,7 +197,9 @@ export const database = {
       lead.email_status || 'unverified',
       lead.email_mx_record || '',
       lead.phone || '',
+      lead.whatsapp || '',
       lead.linkedin_url || '',
+      lead.company_linkedin || '',
       lead.twitter_url || '',
       lead.source || 'Scraped'
     );
@@ -201,14 +217,14 @@ export const database = {
     stmt.run(id);
   },
 
-  getLeads({ search = '', industry = '', location = '', email_status = '', job_id = '', page = 1, limit = 50 } = {}) {
+  getLeads({ search = '', industry = '', location = '', email_status = '', has_whatsapp = '', has_linkedin = '', job_id = '', page = 1, limit = 50 } = {}) {
     let whereClauses = [];
     let params = [];
 
     if (search) {
-      whereClauses.push('(full_name LIKE ? OR company_name LIKE ? OR email LIKE ? OR job_title LIKE ?)');
+      whereClauses.push('(full_name LIKE ? OR company_name LIKE ? OR email LIKE ? OR job_title LIKE ? OR phone LIKE ? OR whatsapp LIKE ?)');
       const pattern = `%${search}%`;
-      params.push(pattern, pattern, pattern, pattern);
+      params.push(pattern, pattern, pattern, pattern, pattern, pattern);
     }
     if (industry) {
       whereClauses.push('industry LIKE ?');
@@ -221,6 +237,12 @@ export const database = {
     if (email_status) {
       whereClauses.push('email_status = ?');
       params.push(email_status);
+    }
+    if (has_whatsapp === 'true' || has_whatsapp === true) {
+      whereClauses.push("(whatsapp IS NOT NULL AND whatsapp != '')");
+    }
+    if (has_linkedin === 'true' || has_linkedin === true) {
+      whereClauses.push("(linkedin_url IS NOT NULL AND linkedin_url != '')");
     }
     if (job_id) {
       whereClauses.push('job_id = ?');
@@ -252,9 +274,9 @@ export const database = {
     let params = [];
 
     if (search) {
-      whereClauses.push('(full_name LIKE ? OR company_name LIKE ? OR email LIKE ? OR job_title LIKE ?)');
+      whereClauses.push('(full_name LIKE ? OR company_name LIKE ? OR email LIKE ? OR job_title LIKE ? OR phone LIKE ? OR whatsapp LIKE ?)');
       const pattern = `%${search}%`;
-      params.push(pattern, pattern, pattern, pattern);
+      params.push(pattern, pattern, pattern, pattern, pattern, pattern);
     }
     if (industry) {
       whereClauses.push('industry LIKE ?');
@@ -282,6 +304,8 @@ export const database = {
     const totalLeads = db.prepare('SELECT COUNT(*) as count FROM leads').get().count;
     const verifiedEmails = db.prepare("SELECT COUNT(*) as count FROM leads WHERE email_status = 'verified'").get().count;
     const totalCompanies = db.prepare('SELECT COUNT(DISTINCT company_name) as count FROM leads').get().count;
+    const whatsappCount = db.prepare("SELECT COUNT(*) as count FROM leads WHERE whatsapp IS NOT NULL AND whatsapp != ''").get().count;
+    const linkedinCount = db.prepare("SELECT COUNT(*) as count FROM leads WHERE linkedin_url IS NOT NULL AND linkedin_url != ''").get().count;
     const totalJobs = db.prepare('SELECT COUNT(*) as count FROM jobs').get().count;
     const runningJobs = db.prepare("SELECT COUNT(*) as count FROM jobs WHERE status = 'running'").get().count;
 
@@ -289,6 +313,8 @@ export const database = {
       totalLeads,
       verifiedEmails,
       totalCompanies,
+      whatsappCount,
+      linkedinCount,
       totalJobs,
       runningJobs
     };

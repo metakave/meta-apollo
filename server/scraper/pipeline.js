@@ -109,7 +109,13 @@ export const pipeline = {
         let teamPeople = [];
         if (companyDetails.teamPages.length > 0) {
           log(`Scanning ${companyDetails.teamPages.length} team & leadership pages...`);
-          teamPeople = await peopleFinder.findPeopleFromTeamPages(companyDetails.teamPages, domain, targetTitlesList);
+          teamPeople = await peopleFinder.findPeopleFromTeamPages(
+            companyDetails.teamPages,
+            domain,
+            companyName,
+            targetTitlesList,
+            companyDetails.personalLinkedIns || []
+          );
           if (teamPeople.length > 0) {
             log(`Found ${teamPeople.length} key leaders on website: ${teamPeople.map(p => `${p.fullName} (${p.jobTitle})`).join(', ')}`);
           }
@@ -124,6 +130,10 @@ export const pipeline = {
             const primaryEmail = candidates.length > 0 ? candidates[0].email : (companyDetails.emails[0] || `contact@${domain}`);
             
             const verifyResult = await verifier.verifyEmail(primaryEmail, domain);
+
+            const personWhatsapp = person.whatsapp || companyDetails.primaryWhatsapp || '';
+            const personPhone = person.phone || companyDetails.phones[0] || '';
+            const personLinkedin = person.linkedinUrl || (companyDetails.socials.linkedin ? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(person.fullName + ' ' + companyName)}` : '');
 
             const leadId = crypto.randomUUID();
             database.insertLead({
@@ -142,14 +152,18 @@ export const pipeline = {
               email: primaryEmail,
               email_status: verifyResult.status,
               email_mx_record: verifyResult.mxRecord || mxCheck.mxRecord || '',
-              phone: companyDetails.phones[0] || '',
-              linkedin_url: person.linkedinUrl || companyDetails.socials.linkedin || '',
+              phone: personPhone,
+              whatsapp: personWhatsapp,
+              linkedin_url: personLinkedin,
+              company_linkedin: companyDetails.socials.linkedin || '',
               twitter_url: companyDetails.socials.twitter || comp.twitter || '',
               source: person.source || 'Apollo Light Crawler'
             });
 
             totalLeadsCreated++;
-            log(`+ Lead Created: ${person.fullName} - ${person.jobTitle} at ${companyName} (${primaryEmail} - ${verifyResult.status})`, 'success');
+            const waInfo = personWhatsapp ? ` [WhatsApp: ${personWhatsapp}]` : '';
+            const liInfo = personLinkedin ? ` [LinkedIn: Ready]` : '';
+            log(`+ Lead Created: ${person.fullName} - ${person.jobTitle} at ${companyName} (${primaryEmail})${waInfo}${liInfo}`, 'success');
           }
         } else {
           // If no individual person named on team page, synthesize executive contact with verified company email / direct email
@@ -157,6 +171,9 @@ export const pipeline = {
             const preferredTitle = targetTitlesList[0] || 'Managing Director';
             const companyEmail = companyDetails.emails[0] || comp.publicEmail || `contact@${domain}`;
             const verifyResult = await verifier.verifyEmail(companyEmail, domain);
+
+            const execWhatsapp = companyDetails.primaryWhatsapp || '';
+            const execLinkedin = companyDetails.socials.linkedin || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(companyName + ' ' + preferredTitle)}`;
 
             const leadId = crypto.randomUUID();
             database.insertLead({
@@ -176,13 +193,16 @@ export const pipeline = {
               email_status: verifyResult.status,
               email_mx_record: verifyResult.mxRecord || mxCheck.mxRecord || '',
               phone: companyDetails.phones[0] || '',
-              linkedin_url: companyDetails.socials.linkedin || '',
+              whatsapp: execWhatsapp,
+              linkedin_url: execLinkedin,
+              company_linkedin: companyDetails.socials.linkedin || '',
               twitter_url: companyDetails.socials.twitter || comp.twitter || '',
               source: comp.source || 'Apollo Web Discovery'
             });
 
             totalLeadsCreated++;
-            log(`+ Lead Created: ${companyName} Leadership (${companyEmail} - ${verifyResult.status})`, 'success');
+            const waInfo = execWhatsapp ? ` [WhatsApp: ${execWhatsapp}]` : '';
+            log(`+ Lead Created: ${companyName} Leadership (${companyEmail})${waInfo}`, 'success');
           }
         }
 
